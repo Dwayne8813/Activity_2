@@ -1,32 +1,31 @@
 
 import { Sequelize } from "sequelize";
 import { sequelize } from "./models/db.js";
-import { User } from "./models/userModel.js";
-import inquirer from "inquirer";
+import "./models/userModel.js";
+import "./models/Device.js";
 
-const rootSequelize = new Sequelize("mysql://root:@localhost:3306/");
-
-const { createDb } = await inquirer.prompt([
-  {
-    type: "confirm",
-    name: "createDb",
-    message: "Database 'dwayne-routing' may not exist. Create it?",
-    default: true,
-  },
-]);
-
-if (createDb) {
-  await rootSequelize.query("CREATE DATABASE IF NOT EXISTS dwayne-routing;");
-  console.log("✅ Database created (if it did not exist)");
-}
+const database = process.env.DB_NAME || "dwayne-routing";
+const rootSequelize = new Sequelize({
+  username: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  host: process.env.DB_HOST || "localhost",
+  port: Number(process.env.DB_PORT || 3306),
+  dialect: "mysql",
+});
 
 try {
+  const quotedDatabase =
+    rootSequelize.getQueryInterface().quoteIdentifier(database);
+  await rootSequelize.query(`CREATE DATABASE IF NOT EXISTS ${quotedDatabase};`);
+  console.log(`Database '${database}' is ready`);
   await sequelize.authenticate();
-  console.log("✅ Connected to MySQL database!");
-  await sequelize.sync({ force: true });
-  console.log("✅ Tables created for all models!");
+  console.log("Connected to MySQL database");
+  await sequelize.sync();
+  console.log("Tables created for all models");
 } catch (err) {
-  console.error("❌ Migration failed:", err);
+  console.error("Migration failed:", err);
+  process.exitCode = 1;
 } finally {
-  process.exit();
+  await rootSequelize.close();
+  await sequelize.close();
 }

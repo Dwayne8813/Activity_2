@@ -103,6 +103,28 @@ fs.readdir(partialsDir, (err, files) => {
 
 app.use("/", router);
 
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  console.error(`Request failed: ${req.method} ${req.originalUrl}`, err);
+
+  if (err.status === 400 || err.type === "entity.parse.failed") {
+    return res.status(400).json({ error: err.message || "Invalid request." });
+  }
+
+  if (
+    err.name === "SequelizeConnectionError" ||
+    err.name === "SequelizeConnectionRefusedError" ||
+    (err.original && err.original.code === "ECONNREFUSED")
+  ) {
+    return res.status(503).json({ error: "Database is unavailable." });
+  }
+
+  res.status(500).json({ error: "An unexpected server error occurred." });
+});
+
 export default app;
 
 if (!process.env.ELECTRON) {

@@ -25,27 +25,25 @@
     */
     
 import express from "express";
+import { homePage } from "../controllers/homeController.js";
+import { devicecontroller as DeviceController } from "../controllers/devicecontroller.js";
+import { Device } from "../models/Device.js";
 
 const router = express.Router();
+const asyncHandler = (handler) => (req, res, next) =>
+    Promise.resolve(handler(req, res, next)).catch(next);
 
-router.get("/", (req, res) => {
-    res.send("Welcome to XianFire Routing Activity");
-});
+router.get("/", homePage);
 
-router.get("/about", (req, res) => {
-    res.send("This is the About page");
-});
+router.get("/greet", (req, res) =>{
+    res.send("holabels");
+    }
+);
 
-router.get("/services", (req, res) => {
-    res.send("These are the Services");
-});
-
-router.get("/contact", (req, res) => {
-    res.send("This is the Contact page");
-});
-
-router.get("/dwayne", (req, res) => {
-    res.send("Welcome to Dwayne's route");
-});
+router.get("/devices", asyncHandler(DeviceController.all));
+router.post("/devices", asyncHandler(DeviceController.insert));
+router.get("/devices/:id", asyncHandler(DeviceController.one));
+router.put("/devices/:id", asyncHandler(DeviceController.update));
+router.delete("/devices/:id", asyncHandler(DeviceController.delete));
 
 export default router;
